@@ -20,8 +20,8 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65532
-        runAsGroup: 65532
+        runAsUser: 1000
+        runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -32,6 +32,11 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          env:
+            # gunicorn writes its control socket to $HOME/.gunicorn;
+            # /tmp is mounted writable (emptyDir) so /tmp works as HOME.
+            - name: HOME
+              value: /tmp
           envFrom:
             - configMapRef:
                 name: httpbin-config
@@ -39,8 +44,12 @@ spec:
                 name: httpbin-secret
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           resources:
             requests:
               cpu: 50m
@@ -60,3 +69,6 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10
+      volumes:
+        - name: tmp
+          emptyDir: {}
