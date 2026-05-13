@@ -121,6 +121,9 @@ jobs:
           echo "ref=ghcr.io/${repo_lc}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "latest=ghcr.io/${repo_lc}:latest" >> "$GITHUB_OUTPUT"
 
+      - name: Set up QEMU (cross-arch emulation)
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -136,6 +139,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ steps.image.outputs.ref }}
             ${{ steps.image.outputs.latest }}
@@ -183,9 +187,13 @@ jobs:
           IMAGE_RAW: ghcr.io/${{ github.repository }}:${{ github.sha }}
         run: |
           export IMAGE="${IMAGE_RAW,,}"
+          export HTTPBIN_SECRET_KEY="$(openssl rand -base64 32)"
           echo "Deploying image: $IMAGE"
-          envsubst < k8s/deployment.yaml | kubectl apply -f -
-          kubectl apply -f k8s/service.yaml
+          # Apply in dependency order: config/secret before deployment.
+          for f in k8s/configmap.yaml k8s/secret.yaml k8s/deployment.yaml \
+                   k8s/service.yaml k8s/hpa.yaml k8s/networkpolicy.yaml; do
+            envsubst '${IMAGE} ${HTTPBIN_SECRET_KEY}' < "$f" | kubectl apply -f -
+          done
 
       - name: Wait for rollout
         run: kubectl rollout status deployment/httpbin --timeout=120s

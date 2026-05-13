@@ -1,0 +1,38 @@
+# Two NetworkPolicy objects:
+#   1. default-deny-ingress: matches every pod in the namespace
+#      (empty podSelector) and declares an Ingress policy with no
+#      rules — denies all ingress by default.
+#   2. allow-httpbin: targets pods labeled app=httpbin and allows
+#      ingress only on TCP 8080 (the application port). No `from:`
+#      means any source is allowed; the port restriction is the gate.
+#
+# NOTE: enforcement requires a CNI plugin that implements
+# NetworkPolicy. kind's default kindnet does NOT enforce them — see
+# k8s/README.md for installing Calico if real enforcement is needed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  labels:
+    app: httpbin
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-httpbin
+  labels:
+    app: httpbin
+spec:
+  podSelector:
+    matchLabels:
+      app: httpbin
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8080

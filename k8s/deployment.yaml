@@ -9,7 +9,7 @@ metadata:
   labels:
     app: httpbin
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: httpbin
@@ -32,6 +32,11 @@ spec:
             - name: http
               containerPort: 8080
               protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: httpbin-config
+            - secretRef:
+                name: httpbin-secret
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
