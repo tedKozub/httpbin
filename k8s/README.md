@@ -30,6 +30,7 @@ kubectl rollout status deployment/httpbin --timeout=120s
 
 ```sh
 kubectl port-forward svc/httpbin 8080:8080 &
+sleep 3
 curl -fsS http://localhost:8080/get
 ```
 
