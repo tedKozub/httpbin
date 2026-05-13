@@ -74,13 +74,18 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -e . pip-audit
+        run: |
+          pip install --upgrade pip
+          pip install -e . pip-audit
 
       # Audits installed dependencies for known CVEs.
       # No --strict: avoids failing on warning that our own
       # editable-installed package (httpbin 0.9.2) isn't on PyPI.
+      # Ignored CVEs:
+      #   CVE-2026-3219 (pip): no upstream fix yet; pip is not present
+      #   in the distroless runtime image, so not a production risk.
       - name: Run pip-audit
-        run: pip-audit
+        run: pip-audit --ignore-vuln CVE-2026-3219
 
   secrets:
     name: Secrets scan (trufflehog)
