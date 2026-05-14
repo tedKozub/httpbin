@@ -1,3 +1,4 @@
+# 1 build stage
 FROM cgr.dev/chainguard/python:latest-dev AS builder
 
 USER root
